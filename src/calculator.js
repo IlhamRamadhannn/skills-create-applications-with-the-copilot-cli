@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-// Supports addition (+), subtraction (-), multiplication (*), and division (/).
+// Supports addition (+), subtraction (-), multiplication (*), division (/),
+// modulo (%), exponentiation (^), and square root (sqrt).
 const operations = {
   "+": (first, second) => first + second,
   add: (first, second) => first + second,
@@ -10,16 +11,64 @@ const operations = {
   multiply: (first, second) => first * second,
   "/": (first, second) => first / second,
   divide: (first, second) => first / second,
+  "%": modulo,
+  modulo,
+  "^": power,
+  power,
 };
 
-function calculate(operation, first, second) {
-  if (!Object.hasOwn(operations, operation)) {
-    throw new Error("Operation must be +, -, *, /, add, subtract, multiply, or divide.");
-  }
+const unaryOperations = {
+  sqrt: squareRoot,
+  squareRoot,
+};
 
-  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+function validateFiniteNumbers(...values) {
+  if (!values.every(Number.isFinite)) {
     throw new Error("Operands must be valid finite numbers.");
   }
+}
+
+function modulo(a, b) {
+  validateFiniteNumbers(a, b);
+  if (b === 0) {
+    throw new Error("Cannot calculate modulo by zero.");
+  }
+  return a % b;
+}
+
+function power(base, exponent) {
+  validateFiniteNumbers(base, exponent);
+  return base ** exponent;
+}
+
+function squareRoot(n) {
+  validateFiniteNumbers(n);
+  if (n < 0) {
+    throw new Error("Cannot calculate the square root of a negative number.");
+  }
+  return Math.sqrt(n);
+}
+
+function calculate(operation, ...operands) {
+  if (Object.hasOwn(unaryOperations, operation)) {
+    if (operands.length !== 1) {
+      throw new Error("Square root requires exactly one operand.");
+    }
+    return unaryOperations[operation](operands[0]);
+  }
+
+  if (!Object.hasOwn(operations, operation)) {
+    throw new Error(
+      "Operation must be +, -, *, /, %, ^, add, subtract, multiply, divide, modulo, power, or sqrt.",
+    );
+  }
+
+  if (operands.length !== 2) {
+    throw new Error("This operation requires exactly two operands.");
+  }
+
+  const [first, second] = operands;
+  validateFiniteNumbers(first, second);
 
   if ((operation === "/" || operation === "divide") && second === 0) {
     throw new Error("Cannot divide by zero.");
@@ -29,29 +78,30 @@ function calculate(operation, first, second) {
 }
 
 function main(args) {
-  if (args.length !== 3) {
+  if (args.length < 2) {
     throw new Error(
-      "Usage: node src/calculator.js <operation> <first-number> <second-number>",
+      "Usage: node src/calculator.js <operation> <number> [second-number]",
     );
   }
 
-  const [operation, firstInput, secondInput] = args;
-  const first = Number(firstInput);
-  const second = Number(secondInput);
+  const [operation, ...inputs] = args;
+  const isUnary = Object.hasOwn(unaryOperations, operation);
+  const expectedOperands = isUnary ? 1 : 2;
 
-  if (
-    firstInput.trim() === "" ||
-    secondInput.trim() === "" ||
-    !Number.isFinite(first) ||
-    !Number.isFinite(second)
-  ) {
-    throw new Error("Both operands must be valid finite numbers.");
+  if (inputs.length !== expectedOperands) {
+    throw new Error(
+      `Usage: node src/calculator.js ${operation} <number>${isUnary ? "" : " <second-number>"}`,
+    );
   }
 
-  console.log(calculate(operation, first, second));
+  if (inputs.some((input) => input.trim() === "" || !Number.isFinite(Number(input)))) {
+    throw new Error("Operands must be valid finite numbers.");
+  }
+
+  console.log(calculate(operation, ...inputs.map(Number)));
 }
 
-module.exports = { calculate };
+module.exports = { calculate, modulo, power, squareRoot };
 
 if (require.main === module) {
   try {

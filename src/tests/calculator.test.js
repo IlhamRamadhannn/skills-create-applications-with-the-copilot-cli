@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { describe, it } = require("node:test");
-const { calculate } = require("../calculator");
+const { calculate, modulo, power, squareRoot } = require("../calculator");
 
 describe("calculator operations", () => {
   it("adds the example operands", () => {
@@ -42,11 +42,49 @@ describe("calculator operations", () => {
   });
 
   it("rejects unsupported operations", () => {
-    assert.throws(() => calculate("%", 5, 2), /Operation must be/);
+    assert.throws(() => calculate("//", 5, 2), /Operation must be/);
   });
 
   it("rejects non-finite operands", () => {
     assert.throws(() => calculate("+", Number.NaN, 1), /finite numbers/);
     assert.throws(() => calculate("*", 1, Number.POSITIVE_INFINITY), /finite numbers/);
+  });
+
+  it("calculates modulo remainders", () => {
+    assert.equal(modulo(5, 2), 1);
+    assert.equal(calculate("%", 5, 2), 1);
+    assert.equal(modulo(20, 6), 2);
+    assert.equal(modulo(-5, 2), -1);
+    assert.equal(calculate("%", 20, 6), 2);
+    assert.equal(calculate("modulo", 20, 6), 2);
+  });
+
+  it("rejects modulo by zero", () => {
+    assert.throws(() => modulo(5, 0), /modulo by zero/);
+    assert.throws(() => calculate("%", 5, 0), /modulo by zero/);
+  });
+
+  it("raises a base to an exponent", () => {
+    assert.equal(power(2, 3), 8);
+    assert.equal(power(9, 0.5), 3);
+    assert.equal(calculate("^", 2, 3), 8);
+    assert.equal(calculate("power", 2, 3), 8);
+  });
+
+  it("calculates square roots", () => {
+    assert.equal(squareRoot(16), 4);
+    assert.equal(squareRoot(0), 0);
+    assert.equal(calculate("sqrt", 16), 4);
+    assert.equal(calculate("squareRoot", 16), 4);
+  });
+
+  it("rejects square roots of negative numbers", () => {
+    assert.throws(() => squareRoot(-1), /square root of a negative number/);
+    assert.throws(() => calculate("sqrt", -1), /square root of a negative number/);
+  });
+
+  it("validates unary operation arity", () => {
+    assert.throws(() => calculate("sqrt"), /exactly one operand/);
+    assert.throws(() => calculate("sqrt", 4, 2), /exactly one operand/);
   });
 });
